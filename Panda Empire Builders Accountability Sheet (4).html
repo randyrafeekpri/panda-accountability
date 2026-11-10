@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Panda Empire Builders - Accountability Sheet</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- html2canvas for capturing DOM -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <!-- Google Fonts: Inter & Space Grotesk -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* Clean custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f1f4;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #c5c5d0;
+      border-radius: 3px;
+    }
+
+    /* Fixed crisp capture card dimension: generous line heights prevent vertical clipping */
+    #accountability-capture-card {
+      width: 520px;
+      min-width: 520px;
+      max-width: 520px;
+      background-color: #ffffff;
+      box-sizing: border-box;
+      transform-origin: top center;
+    }
+
+    /* Text clipping guardrails: ensure clean baselines during canvas rasterization */
+    #accountability-capture-card * {
+      text-rendering: geometricPrecision;
+      -webkit-font-smoothing: antialiased;
+    }
+    .safe-text {
+      line-height: 1.5 !important;
+      padding-top: 2px;
+      padding-bottom: 4px;
+      display: inline-block;
+    }
+
+    /* Checklist row items label styling */
+    .checklist-label-text {
+      line-height: 1.45 !important;
+      padding-bottom: 2px;
+      display: inline-block;
+    }
+
+    /* Centered number indicator box: rock-solid alignment in both browser and html2canvas */
+    .count-indicator-box {
+      width: 36px;
+      height: 28px;
+      min-width: 36px;
+      min-height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border-radius: 6px;
+      box-sizing: border-box;
+      padding: 0;
+    }
+    .count-indicator-box span {
+      display: block;
+      line-height: 1 !important;
+      font-size: 13px;
+      font-weight: 800;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      transform: translateY(-0.5px);
+    }
+
+    /* Official Grade Box dead-center */
+    .official-grade-box {
+      width: 52px;
+      height: 52px;
+      min-width: 52px;
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      border-radius: 12px;
+      border: 2px solid #000000;
+      box-sizing: border-box;
+      padding: 0;
+    }
+    .official-grade-box span {
+      display: block;
+      line-height: 1 !important;
+      font-family: 'Space Grotesk', 'Inter', sans-serif;
+      font-size: 28px;
+      font-weight: 900;
+      transform: translateY(-1px);
+    }
+
+    /* Scale key row styling: high-contrast dark text always legible */
+    .scale-row-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 8px;
+      border-radius: 6px;
+      font-family: 'Space Grotesk', 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      color: #111111;
+      transition: background-color 0.15s ease, color 0.15s ease;
+      line-height: 1.3;
+    }
+    .scale-row-item.scale-active {
+      background-color: #000000 !important;
+      color: #ffffff !important;
+    }
+    .scale-row-item.scale-active span:first-child {
+      color: #e5e5e5 !important;
+    }
+    .scale-row-item.scale-active span:last-child {
+      color: #ffffff !important;
+      font-weight: 900 !important;
+    }
+
+    /* Checkmark box rendering guarantees */
+    .render-checkbox {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #111111;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      border-radius: 5px;
+      background-color: #ffffff;
+      box-sizing: border-box;
+    }
+    .render-checkbox.checked {
+      background-color: #111111;
+      border-color: #111111;
+    }
+    .render-checkbox svg {
+      display: none;
+    }
+    .render-checkbox.checked svg {
+      display: block;
+    }
+
+    /* Interactive input checks */
+    .input-check-box {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border: 2px solid #9CA3AF;
+      border-radius: 6px;
+      background: #ffffff;
+      cursor: pointer;
+      display: inline-grid;
+      place-content: center;
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+    }
+    .input-check-box:checked {
+      background-color: #000000;
+      border-color: #000000;
+    }
+    .input-check-box:checked::after {
+      content: "✓";
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    /* Responsive preview stage: auto-scales down on mobile screens to fit 100% of viewport width */
+    .preview-stage-wrapper {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      overflow: hidden;
+      padding: 4px 0 16px 0;
+    }
+    .preview-scaler {
+      transform-origin: top center;
+      transition: transform 0.1s ease;
+    }
+  </style>
+</head>
+<body class="bg-[#F4F4F6] text-sheet-text min-h-screen selection:bg-black selection:text-white font-sans antialiased">
+
+  <!-- ================= TOP HEADER ================= -->
+  <header class="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+      
+      <!-- App Identity -->
+      <div class="flex items-center gap-2.5">
+        <div class="w-8 h-8 bg-black rounded-lg text-white flex items-center justify-center font-display font-extrabold text-xs tracking-wider shadow">
+          PE
+        </div>
+        <div>
+          <span class="font-display font-black tracking-tight text-sm sm:text-base uppercase text-black block leading-none">
+            Panda Empire Builders
+          </span>
+          <span class="text-[10px] font-semibold text-gray-500 tracking-wide uppercase">
+            Accountability Generator • Clean White
+          </span>
+        </div>
+      </div>
+
+      <!-- Quick Action Buttons -->
+      <div class="flex items-center gap-2">
+        <button 
+          id="btn-open-deploy-guide"
+          class="hidden md:flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 transition"
+        >
+          <i class="fa-solid fa-cloud-arrow-up text-gray-500"></i>
+          <span>Free Deploy</span>
+        </button>
+
+        <button 
+          id="btn-reset-all" 
+          class="p-2 text-xs font-semibold rounded-lg border border-gray-300 hover:bg-gray-100 text-gray-600 transition"
+          title="Reset All Inputs"
+        >
+          <i class="fa-solid fa-rotate-right"></i>
+        </button>
+
+        <button 
+          id="btn-header-download" 
+          class="px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider rounded-lg bg-black text-white hover:bg-zinc-800 transition shadow flex items-center gap-1.5"
+        >
+          <i class="fa-solid fa-arrow-down"></i>
+          <span class="hidden sm:inline">Download</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Mobile View Switcher (Edit vs Preview live sync) -->
+  <div class="lg:hidden bg-white border-b border-gray-200 px-4 py-2 sticky top-[57px] z-20">
+    <div class="flex rounded-lg bg-gray-100 p-1 text-xs font-bold">
+      <button id="tab-edit" class="flex-1 py-1.5 rounded-md bg-white shadow-sm text-black flex items-center justify-center gap-1.5">
+        <i class="fa-solid fa-pen-to-square"></i> Fill Details
+      </button>
+      <button id="tab-preview" class="flex-1 py-1.5 rounded-md text-gray-500 flex items-center justify-center gap-1.5">
+        <i class="fa-solid fa-eye"></i> View Card Preview
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= MAIN APP WORKSPACE ================= -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-6">
+    
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      
+      <!-- ================= LEFT COLUMN: INPUT CONTROLS ================= -->
+      <div id="section-inputs" class="lg:col-span-6 space-y-4">
+
+        <!-- 1. Identity & Date Form Card -->
+        <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-3">
+          <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-black flex items-center gap-1.5">
+              <span class="w-4 h-4 rounded-full bg-black text-white text-[9px] flex items-center justify-center font-bold">1</span>
+              Member & Date
+            </h2>
+            <span class="text-[11px] text-gray-400 font-medium">Header Info</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label for="select-member-name" class="block text-xs font-bold text-gray-700 mb-1">
+                Team Member Name
+              </label>
+              <div class="space-y-1.5">
+                <select 
+                  id="select-member-name" 
+                  class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-black focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition shadow-sm cursor-pointer"
+                >
+                  <option value="Apryl Ramkalawan">Apryl Ramkalawan</option>
+                  <option value="Kamini Dhanraj">Kamini Dhanraj</option>
+                  <option value="Randy Rafeek">Randy Rafeek</option>
+                  <option value="Sakeena Khemraj">Sakeena Khemraj</option>
+                  <option value="Sharda Naidu">Sharda Naidu</option>
+                  <option value="Sharon Meyer">Sharon Meyer</option>
+                  <option value="__CUSTOM__">+ Enter Other Name...</option>
+                </select>
+
+                <input 
+                  type="text" 
+                  id="input-custom-name" 
+                  placeholder="Type member name..." 
+                  class="w-full hidden bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-black placeholder-gray-400 focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition shadow-sm"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label for="input-date" class="block text-xs font-bold text-gray-700 mb-1">
+                Accountability Date
+              </label>
+              <input 
+                type="date" 
+                id="input-date" 
+                class="w-full bg-white border border-gray-300 rounded-lg px-3 py-2 text-xs sm:text-sm font-semibold text-black focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition shadow-sm"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Checklist & Actual Counts -->
+        <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-3">
+          <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+            <div>
+              <h2 class="text-xs font-bold uppercase tracking-wider text-black flex items-center gap-1.5">
+                <span class="w-4 h-4 rounded-full bg-black text-white text-[9px] flex items-center justify-center font-bold">2</span>
+                Production Checklist
+              </h2>
+            </div>
+            <button 
+              id="btn-select-all" 
+              class="text-xs text-gray-700 hover:text-black font-bold underline transition"
+            >
+              Check All
+            </button>
+          </div>
+
+          <!-- Dynamic List of 8 Activities -->
+          <div id="form-activities-list" class="space-y-1.5">
+            <!-- Populated via JavaScript -->
+          </div>
+        </div>
+
+        <!-- 3. Grade Computation & Manual Override -->
+        <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm space-y-3">
+          <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+            <div>
+              <h2 class="text-xs font-bold uppercase tracking-wider text-black flex items-center gap-1.5">
+                <span class="w-4 h-4 rounded-full bg-black text-white text-[9px] flex items-center justify-center font-bold">3</span>
+                Official Grade Rating
+              </h2>
+            </div>
+            
+            <label class="flex items-center gap-2 text-xs font-bold text-gray-700 cursor-pointer select-none bg-gray-50 border border-gray-300 px-2.5 py-1 rounded-md hover:border-black transition">
+              <input type="checkbox" id="toggle-manual-override" class="input-check-box w-3.5 h-3.5 rounded" />
+              <span>Manual Override</span>
+            </label>
+          </div>
+
+          <div class="flex flex-wrap items-center justify-between gap-2 bg-gray-50 border border-gray-200 rounded-xl p-3">
+            <div>
+              <span class="text-[10px] text-gray-500 font-semibold uppercase tracking-wider block">Calculated Grade</span>
+              <div class="flex items-center gap-2 mt-0.5">
+                <span id="calculated-grade-badge" class="font-display text-2xl font-black text-black">F</span>
+                <span id="calculated-items-count" class="text-xs text-gray-500 font-medium">(0 of 8 completed)</span>
+              </div>
+            </div>
+
+            <!-- Manual Grade Buttons -->
+            <div id="manual-grade-pill-group" class="flex items-center gap-1 opacity-30 pointer-events-none transition-all">
+              <button data-grade="A+" class="grade-pill-btn px-2 py-1 text-xs font-bold rounded border border-gray-300 bg-white text-gray-800 hover:border-black transition">A+</button>
+              <button data-grade="A" class="grade-pill-btn px-2 py-1 text-xs font-bold rounded border border-gray-300 bg-white text-gray-800 hover:border-black transition">A</button>
+              <button data-grade="B" class="grade-pill-btn px-2 py-1 text-xs font-bold rounded border border-gray-300 bg-white text-gray-800 hover:border-black transition">B</button>
+              <button data-grade="C" class="grade-pill-btn px-2 py-1 text-xs font-bold rounded border border-gray-300 bg-white text-gray-800 hover:border-black transition">C</button>
+              <button data-grade="D" class="grade-pill-btn px-2 py-1 text-xs font-bold rounded border border-gray-300 bg-white text-gray-800 hover:border-black transition">D</button>
+              <button data-grade="F" class="grade-pill-btn px-2 py-1 text-xs font-bold rounded border border-gray-300 bg-white text-gray-800 hover:border-black transition">F</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Export Buttons -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+          <button 
+            id="btn-main-download" 
+            class="w-full py-3.5 px-4 bg-black hover:bg-neutral-800 active:scale-[0.99] text-white font-display font-bold text-xs tracking-wider uppercase rounded-xl shadow-md transition flex items-center justify-center gap-2"
+          >
+            <i class="fa-solid fa-download"></i>
+            <span>Download Clean PNG</span>
+          </button>
+          
+          <button 
+            id="btn-copy-chat-text" 
+            class="w-full py-3.5 px-4 bg-white hover:bg-gray-50 border-2 border-black active:scale-[0.99] text-black font-display font-bold text-xs tracking-wider uppercase rounded-xl shadow-sm transition flex items-center justify-center gap-2"
+          >
+            <i class="fa-regular fa-clipboard"></i>
+            <span>Copy Text For Chat</span>
+          </button>
+        </div>
+
+      </div>
+
+      <!-- ================= RIGHT COLUMN: RESPONSIVE CLEAN WHITE CARD PREVIEW ================= -->
+      <div id="section-preview" class="lg:col-span-6 flex flex-col items-center w-full">
+        
+        <div class="w-full max-w-[520px] flex items-center justify-between pb-2 px-1 text-xs font-semibold text-gray-500">
+          <span class="flex items-center gap-1.5 uppercase tracking-wider text-black">
+            <i class="fa-regular fa-circle-dot text-emerald-600"></i> Live Card (Auto-Fits Screen)
+          </span>
+          <span class="font-mono text-[11px] bg-gray-200 text-gray-700 px-2 py-0.5 rounded">
+            520 × 670 px
+          </span>
+        </div>
+
+        <!-- Scaled wrapper dynamically calculated on mobile so it never stretches horizontally -->
+        <div class="preview-stage-wrapper" id="preview-stage-wrapper">
+          <div class="preview-scaler" id="preview-scaler">
+            
+            <!-- ================= THE GENERATED WHITE CARD (Precise, Centered, Zero Clipping) ================= -->
+            <div 
+              id="accountability-capture-card" 
+              class="rounded-2xl border-2 border-black p-6 bg-white shadow-xl flex flex-col justify-between"
+              style="height: 670px; min-height: 670px;"
+            >
+
+              <div class="w-full flex flex-col h-full justify-between">
+                
+                <!-- 1. CARD HEADER -->
+                <div class="border-b-2 border-black pb-3.5">
+                  <div class="flex items-start justify-between gap-3">
+                    
+                    <!-- Left: Clean Bold Brand Typography -->
+                    <div class="min-w-0 pr-2">
+                      <h1 class="font-display font-black text-[22px] safe-text tracking-tight uppercase text-black leading-none m-0">
+                        PANDA EMPIRE BUILDERS
+                      </h1>
+                      <div class="flex items-center gap-1.5 mt-1 safe-text">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-gray-600">
+                          DAILY ACCOUNTABILITY REPORT
+                        </span>
+                        <span class="text-gray-300">•</span>
+                        <span class="text-[10px] font-mono tracking-wider text-gray-500">
+                          EST. 2019
+                        </span>
+                      </div>
+                    </div>
+
+                    <!-- Right: Centered Date Box -->
+                    <div class="border-2 border-black rounded-xl px-3 py-1.5 bg-white text-center shrink-0 min-w-[110px]">
+                      <span class="block text-[8px] font-black uppercase tracking-widest text-gray-500 leading-none">
+                        DATE
+                      </span>
+                      <span id="card-display-date" class="font-display font-bold text-sm tracking-wider text-black block mt-1 safe-text">
+                        11.10.2026
+                      </span>
+                    </div>
+
+                  </div>
+
+                  <!-- Team Member Row (Generous line-height so letters like P, Y, J never clip) -->
+                  <div class="mt-3.5 pt-2.5 border-t border-gray-200 flex items-center justify-between">
+                    <div class="min-w-0 pr-3">
+                      <span class="text-[8px] font-bold uppercase tracking-widest text-gray-400 block leading-tight">
+                        TEAM MEMBER
+                      </span>
+                      <h2 id="card-display-name" class="font-display font-black text-lg safe-text uppercase text-black tracking-wide leading-normal truncate max-w-[340px] m-0">
+                        APRYL RAMKALAWAN
+                      </h2>
+                    </div>
+                    <div class="border border-black px-2 py-0.5 rounded bg-white text-[8px] font-black tracking-widest uppercase text-black shrink-0">
+                      OFFICIAL REPORT
+                    </div>
+                  </div>
+                </div>
+
+                <!-- 2. CARD MIDDLE SECTION: Scale Key & 8 Activities Table -->
+                <div class="grid grid-cols-12 gap-3.5 my-3.5 flex-1 items-stretch">
+                  
+                  <!-- Left: Scale Key Box (All rows high-contrast black/charcoal text, no faint gray or invisible white text) -->
+                  <div class="col-span-4 border-2 border-black rounded-xl p-2.5 bg-white flex flex-col justify-between">
+                    <div>
+                      <div class="text-[9px] font-black uppercase tracking-wider text-black border-b border-gray-200 pb-1.5 text-center">
+                        SCALE KEY
+                      </div>
+                      <div class="mt-2 space-y-1">
+                        <div id="scale-row-5" class="scale-row-item">
+                          <span class="text-zinc-700 font-semibold">5+ =</span>
+                          <span class="font-extrabold text-black">A+</span>
+                        </div>
+                        <div id="scale-row-4" class="scale-row-item">
+                          <span class="text-zinc-700 font-semibold">4 =</span>
+                          <span class="font-extrabold text-black">A</span>
+                        </div>
+                        <div id="scale-row-3" class="scale-row-item">
+                          <span class="text-zinc-700 font-semibold">3 =</span>
+                          <span class="font-extrabold text-black">B</span>
+                        </div>
+                        <div id="scale-row-2" class="scale-row-item">
+                          <span class="text-zinc-700 font-semibold">2 =</span>
+                          <span class="font-extrabold text-black">C</span>
+                        </div>
+                        <div id="scale-row-1" class="scale-row-item">
+                          <span class="text-zinc-700 font-semibold">1 =</span>
+                          <span class="font-extrabold text-black">D</span>
+                        </div>
+                        <div id="scale-row-0" class="scale-row-item">
+                          <span class="text-zinc-700 font-semibold">0 =</span>
+                          <span class="font-extrabold text-red-600">F</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="text-[8px] font-bold text-center tracking-widest uppercase text-gray-500 pt-1.5 border-t border-gray-200">
+                      DAILY SCALE
+                    </div>
+                  </div>
+
+                  <!-- Right: 8 Checklist Rows with Centered Number Badges -->
+                  <div class="col-span-8 border-2 border-black rounded-xl p-2.5 bg-white flex flex-col justify-between">
+                    <div id="card-display-activities-list" class="space-y-1">
+                      <!-- Rendered by JS -->
+                    </div>
+                  </div>
+
+                </div>
+
+                <!-- 3. CARD FOOTER: Hierarchy Standards & Centered Grade Box -->
+                <div class="border-t-2 border-black pt-3 flex items-center justify-between">
+                  <div>
+                    <span class="text-[8px] font-black uppercase tracking-widest text-gray-500 block leading-tight">
+                      HIERARCHY STANDARDS
+                    </span>
+                    <div class="font-display font-black text-xs uppercase tracking-wider text-black mt-0.5 safe-text">
+                      VISION • INTEGRITY • PURPOSE
+                    </div>
+                  </div>
+
+                  <div class="flex items-center gap-2.5">
+                    <div class="text-right">
+                      <span class="text-[8px] font-black uppercase tracking-widest text-gray-500 block leading-none">
+                        OFFICIAL
+                      </span>
+                      <span class="font-display font-black text-sm uppercase tracking-tight text-black block leading-none mt-0.5">
+                        GRADE
+                      </span>
+                    </div>
+
+                    <!-- Grade Box: Flexbox dead-centered text vertically and horizontally -->
+                    <div 
+                      id="card-display-grade-box"
+                      class="official-grade-box bg-white text-black shadow"
+                    >
+                      <span id="card-display-grade-text">F</span>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+        <p class="text-xs text-gray-500 mt-1 text-center">
+          Clean white design with high-contrast black framing. Tap Download for high-res output.
+        </p>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ================= POPUP MODAL: IMAGE PREVIEW & SAVE ================= -->
+  <div id="preview-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-white border-2 border-black rounded-2xl max-w-lg w-full p-5 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-gray-200 pb-3">
+        <div class="flex items-center gap-2">
+          <i class="fa-solid fa-circle-check text-black text-lg"></i>
+          <div>
+            <h3 class="font-display font-bold uppercase text-black text-base leading-none">
+              Accountability Card Ready
+            </h3>
+            <span class="text-[11px] text-gray-500 font-medium">Exported Clean White High-Res PNG</span>
+          </div>
+        </div>
+        <button id="btn-close-modal" class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 text-black flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Preview Image Container -->
+      <div class="bg-gray-50 rounded-xl p-2 border border-gray-200 flex justify-center max-h-[50vh] overflow-auto">
+        <img id="modal-image-preview" src="" alt="Accountability Sheet" class="rounded-lg max-w-full h-auto shadow border border-gray-200" />
+      </div>
+
+      <p class="text-xs text-gray-600 text-center font-medium">
+        On mobile: Tap and hold the image above to select <strong>"Save to Photos"</strong> or share directly.
+      </p>
+
+      <div class="flex gap-2 pt-1">
+        <a 
+          id="modal-direct-download-link" 
+          href="#" 
+          download="Panda_Accountability.png" 
+          class="flex-1 py-3 bg-black hover:bg-zinc-800 text-white font-display font-bold uppercase tracking-wider text-center rounded-xl transition flex items-center justify-center gap-2 text-xs"
+        >
+          <i class="fa-solid fa-download"></i> Save PNG File
+        </a>
+        <button 
+          id="modal-copy-img-btn" 
+          class="px-4 py-3 bg-gray-100 hover:bg-gray-200 border border-gray-300 text-black font-bold text-xs rounded-xl transition flex items-center gap-1.5"
+        >
+          <i class="fa-regular fa-copy"></i> Copy
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= FREE TEAM DEPLOY MODAL ================= -->
+  <div id="deploy-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-white border-2 border-black rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-gray-200 pb-3">
+        <h3 class="font-display font-black uppercase text-black text-lg">
+          Deploy Free In 60 Seconds
+        </h3>
+        <button id="btn-close-deploy-modal" class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 text-black flex items-center justify-center">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs text-gray-700 leading-relaxed">
+        <div class="p-3 bg-gray-50 border border-gray-200 rounded-xl space-y-1">
+          <div class="font-bold text-black uppercase">Option A: Netlify Drop (Easiest)</div>
+          <p>1. Save this code as <code class="bg-gray-200 px-1 py-0.5 rounded text-black">index.html</code> in a new folder.</p>
+          <p>2. Open <strong class="text-black">app.netlify.com/drop</strong> in your browser.</p>
+          <p>3. Drag the folder onto the page. Netlify gives you a live link to send to all your teammates!</p>
+        </div>
+
+        <div class="p-3 bg-gray-50 border border-gray-200 rounded-xl space-y-1">
+          <div class="font-bold text-black uppercase">Option B: GitHub Pages</div>
+          <p>Create a repository named <code class="bg-gray-200 px-1 py-0.5 rounded text-black">accountability</code>, upload <code class="bg-gray-200 px-1 py-0.5 rounded text-black">index.html</code>, and enable Pages in Settings.</p>
+        </div>
+      </div>
+
+      <button id="btn-deploy-ok" class="w-full py-2.5 bg-black text-white font-display font-bold uppercase rounded-xl hover:bg-zinc-800 transition text-xs">
+        Close Guide
+      </button>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div id="toast-banner" class="fixed bottom-5 right-5 z-50 bg-black text-white font-bold text-xs px-4 py-3 rounded-xl shadow-2xl flex items-center gap-2.5 border border-zinc-700 transform translate-y-32 transition-transform duration-300">
+    <i id="toast-icon" class="fa-solid fa-circle-check text-white text-sm"></i>
+    <span id="toast-text">Message</span>
+  </div>
+
+  <!-- Hidden Fallback Canvas -->
+  <canvas id="fallback-canvas" class="hidden"></canvas>
+
+  <!-- ================= JAVASCRIPT LOGIC ================= -->
+  <script>
+    // 8 Core Activities
+    const activities = [
+      { id: 'names', label: "20 NEW NAMES & #'S", defaultCount: '20', userCount: '', checked: false },
+      { id: 'calls', label: "50 CALLS", defaultCount: '50', userCount: '', checked: false },
+      { id: 'rec_sched', label: "3 REC APPT SCHED", defaultCount: '3', userCount: '', checked: false },
+      { id: 'kt_sched', label: "3 KT APPT SCHED", defaultCount: '3', userCount: '', checked: false },
+      { id: 'rec_comp', label: "3 REC APPT COMPLETED", defaultCount: '3', userCount: '', checked: false },
+      { id: 'kt_comp', label: "3 KT APPT COMPLETED", defaultCount: '3', userCount: '', checked: false },
+      { id: 'iba', label: "1 IBA", defaultCount: '1', userCount: '', checked: false },
+      { id: 'life', label: "1 LIFE APP", defaultCount: '1', userCount: '', checked: false }
+    ];
+
+    let isManualOverride = false;
+    let manualGrade = 'F';
+
+    // DOM References
+    const selectMemberName = document.getElementById('select-member-name');
+    const inputCustomName = document.getElementById('input-custom-name');
+    const inputDate = document.getElementById('input-date');
+    const formActivitiesList = document.getElementById('form-activities-list');
+    const cardDisplayActivitiesList = document.getElementById('card-display-activities-list');
+    const cardDisplayName = document.getElementById('card-display-name');
+    const cardDisplayDate = document.getElementById('card-display-date');
+    const cardDisplayGradeBox = document.getElementById('card-display-grade-box');
+    const cardDisplayGradeText = document.getElementById('card-display-grade-text') || cardDisplayGradeBox;
+    const calculatedGradeBadge = document.getElementById('calculated-grade-badge');
+    const calculatedItemsCount = document.getElementById('calculated-items-count');
+    const toggleManualOverride = document.getElementById('toggle-manual-override');
+    const manualGradePillGroup = document.getElementById('manual-grade-pill-group');
+    const btnSelectAll = document.getElementById('btn-select-all');
+    const btnMainDownload = document.getElementById('btn-main-download');
+    const btnHeaderDownload = document.getElementById('btn-header-download');
+    const btnCopyChatText = document.getElementById('btn-copy-chat-text');
+    const btnResetAll = document.getElementById('btn-reset-all');
+
+    // Mobile Switchers & Scaler
+    const tabEdit = document.getElementById('tab-edit');
+    const tabPreview = document.getElementById('tab-preview');
+    const sectionInputs = document.getElementById('section-inputs');
+    const sectionPreview = document.getElementById('section-preview');
+    const previewStageWrapper = document.getElementById('preview-stage-wrapper');
+    const previewScaler = document.getElementById('preview-scaler');
+
+    // Modals & Toast
+    const previewModal = document.getElementById('preview-modal');
+    const modalImagePreview = document.getElementById('modal-image-preview');
+    const modalDirectDownloadLink = document.getElementById('modal-direct-download-link');
+    const modalCopyImgBtn = document.getElementById('modal-copy-img-btn');
+    const btnCloseModal = document.getElementById('btn-close-modal');
+    const deployModal = document.getElementById('deploy-modal');
+    const btnOpenDeployGuide = document.getElementById('btn-open-deploy-guide');
+    const btnCloseDeployModal = document.getElementById('btn-close-deploy-modal');
+    const btnDeployOk = document.getElementById('btn-deploy-ok');
+    const toastBanner = document.getElementById('toast-banner');
+    const toastText = document.getElementById('toast-text');
+
+    function showToast(msg) {
+      toastText.textContent = msg;
+      toastBanner.classList.remove('translate-y-32');
+      setTimeout(() => toastBanner.classList.add('translate-y-32'), 3000);
+    }
+
+    // Responsive Mobile Preview Scaler: Keeps the card completely inside the viewport without horizontal stretching
+    function updatePreviewScale() {
+      if (!previewStageWrapper || !previewScaler) return;
+      const cardWidth = 520;
+      const cardHeight = 670;
+      const availableWidth = previewStageWrapper.clientWidth - 16;
+      
+      if (availableWidth < cardWidth && availableWidth > 0) {
+        const scale = availableWidth / cardWidth;
+        previewScaler.style.transform = `scale(${scale})`;
+        previewScaler.style.width = `${cardWidth}px`;
+        previewStageWrapper.style.height = `${Math.ceil(cardHeight * scale) + 8}px`;
+      } else {
+        previewScaler.style.transform = 'none';
+        previewScaler.style.width = 'auto';
+        previewStageWrapper.style.height = 'auto';
+      }
+    }
+
+    // Mobile Tabs Switcher
+    if (tabEdit && tabPreview) {
+      tabEdit.addEventListener('click', () => {
+        tabEdit.className = "flex-1 py-1.5 rounded-md bg-white shadow-sm text-black flex items-center justify-center gap-1.5";
+        tabPreview.className = "flex-1 py-1.5 rounded-md text-gray-500 flex items-center justify-center gap-1.5";
+        sectionInputs.classList.remove('hidden');
+        sectionPreview.classList.add('hidden');
+      });
+
+      tabPreview.addEventListener('click', () => {
+        tabPreview.className = "flex-1 py-1.5 rounded-md bg-white shadow-sm text-black flex items-center justify-center gap-1.5";
+        tabEdit.className = "flex-1 py-1.5 rounded-md text-gray-500 flex items-center justify-center gap-1.5";
+        sectionInputs.classList.add('hidden');
+        sectionPreview.classList.remove('hidden');
+        updatePreviewScale();
+      });
+    }
+
+    // Format Date string: MM.DD.YYYY
+    function formatDate(val) {
+      if (!val) return '11.10.2026';
+      const parts = val.split('-');
+      if (parts.length === 3) {
+        return `${parts[1]}.${parts[2]}.${parts[0]}`;
+      }
+      return val;
+    }
+
+    function initDate() {
+      const now = new Date();
+      const yyyy = now.getFullYear();
+      const mm = String(now.getMonth() + 1).padStart(2, '0');
+      const dd = String(now.getDate()).padStart(2, '0');
+      const iso = `${yyyy}-${mm}-${dd}`;
+      inputDate.value = iso;
+      cardDisplayDate.textContent = formatDate(iso);
+    }
+
+    // Render Checklist and Card
+    function render() {
+      // 1. Render Left Controls
+      formActivitiesList.innerHTML = '';
+      activities.forEach((act, idx) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between p-2 rounded-lg border border-gray-200 bg-white hover:border-gray-300 transition';
+        row.innerHTML = `
+          <div class="flex items-center gap-2.5">
+            <input 
+              type="checkbox" 
+              id="chk-${idx}" 
+              data-idx="${idx}" 
+              class="input-check-box form-check" 
+              ${act.checked ? 'checked' : ''}
+            />
+            <label for="chk-${idx}" class="text-xs sm:text-sm font-bold text-gray-800 select-none cursor-pointer">
+              ${act.label}
+            </label>
+          </div>
+          <div class="flex items-center gap-1.5 shrink-0">
+            <span class="text-[10px] text-gray-400 font-semibold uppercase">Count:</span>
+            <input 
+              type="text" 
+              data-idx="${idx}" 
+              value="${act.userCount}" 
+              placeholder="${act.defaultCount}" 
+              class="form-num-input w-12 text-center bg-gray-50 border border-gray-300 rounded-md py-1 px-1 text-xs font-bold text-black focus:border-black focus:outline-none"
+            />
+          </div>
+        `;
+        formActivitiesList.appendChild(row);
+      });
+
+      // 2. Render Card Items
+      renderCardItems();
+
+      // 3. Attach listeners & calculate
+      attachEvents();
+      calculateGrade();
+      updatePreviewScale();
+    }
+
+    function renderCardItems() {
+      cardDisplayActivitiesList.innerHTML = '';
+      activities.forEach((act) => {
+        const row = document.createElement('div');
+        row.className = 'flex items-center justify-between py-1 px-1 rounded border-b border-gray-100 last:border-none';
+        
+        const isChecked = act.checked;
+        const displayCount = act.userCount.trim() !== '' ? act.userCount : (isChecked ? act.defaultCount : '-');
+
+        // Checkmark + text (ample line-height prevents baseline cuts) + dead-centered count badge
+        row.innerHTML = `
+          <div class="flex items-center gap-2 min-w-0 pr-2">
+            <div class="render-checkbox ${isChecked ? 'checked' : ''}">
+              <svg viewBox="0 0 24 24" class="w-3.5 h-3.5 text-white fill-none stroke-current stroke-[3.5] stroke-linecap-round stroke-linejoin-round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <span class="font-display text-[11px] font-bold uppercase truncate checklist-label-text ${isChecked ? 'text-black' : 'text-zinc-600'}">
+              ${act.label}
+            </span>
+          </div>
+          <div class="shrink-0 flex items-center justify-center">
+            <div class="count-indicator-box ${isChecked ? 'bg-black text-white border border-black' : 'bg-gray-100 text-zinc-600 border border-gray-200'}">
+              <span>${displayCount}</span>
+            </div>
+          </div>
+        `;
+        cardDisplayActivitiesList.appendChild(row);
+      });
+    }
+
+    function attachEvents() {
+      document.querySelectorAll('.form-check').forEach(chk => {
+        chk.addEventListener('change', (e) => {
+          const idx = parseInt(e.target.getAttribute('data-idx'), 10);
+          activities[idx].checked = e.target.checked;
+          if (e.target.checked && activities[idx].userCount === '') {
+            activities[idx].userCount = activities[idx].defaultCount;
+            const inputEl = document.querySelector(`.form-num-input[data-idx="${idx}"]`);
+            if (inputEl) inputEl.value = activities[idx].defaultCount;
+          }
+          renderCardItems();
+          calculateGrade();
+        });
+      });
+
+      document.querySelectorAll('.form-num-input').forEach(inp => {
+        inp.addEventListener('input', (e) => {
+          const idx = parseInt(e.target.getAttribute('data-idx'), 10);
+          activities[idx].userCount = e.target.value;
+          renderCardItems();
+        });
+      });
+    }
+
+    // Grade computation & Scale Key Highlighter
+    function calculateGrade() {
+      const count = activities.filter(a => a.checked).length;
+      let calculated = 'F';
+
+      if (count >= 5) calculated = 'A+';
+      else if (count === 4) calculated = 'A';
+      else if (count === 3) calculated = 'B';
+      else if (count === 2) calculated = 'C';
+      else if (count === 1) calculated = 'D';
+      else calculated = 'F';
+
+      calculatedGradeBadge.textContent = calculated;
+      calculatedItemsCount.textContent = `(${count} of 8 completed)`;
+
+      const finalGrade = isManualOverride ? manualGrade : calculated;
+      
+      const gradeTextElem = document.getElementById('card-display-grade-text');
+      if (gradeTextElem) {
+        gradeTextElem.textContent = finalGrade;
+      } else {
+        cardDisplayGradeBox.textContent = finalGrade;
+      }
+
+      // Grade badge styling: clean, centered, modern
+      if (finalGrade === 'A+' || finalGrade === 'A') {
+        cardDisplayGradeBox.className = "official-grade-box bg-black text-white shadow";
+      } else if (finalGrade === 'B' || finalGrade === 'C') {
+        cardDisplayGradeBox.className = "official-grade-box bg-gray-100 text-black shadow";
+      } else {
+        cardDisplayGradeBox.className = "official-grade-box bg-white text-black shadow";
+      }
+
+      highlightScaleKey(finalGrade);
+    }
+
+    function highlightScaleKey(grade) {
+      // Clear all active classes and restore crisp dark charcoal text for all inactive rows
+      ['5', '4', '3', '2', '1', '0'].forEach(id => {
+        const row = document.getElementById(`scale-row-${id}`);
+        if (row) {
+          row.classList.remove('scale-active');
+          const leftSpan = row.querySelector('span:first-child');
+          const rightSpan = row.querySelector('span:last-child');
+          if (leftSpan) leftSpan.className = "text-zinc-700 font-semibold";
+          if (rightSpan) {
+            rightSpan.className = id === '0' ? "font-extrabold text-red-600" : "font-extrabold text-black";
+          }
+        }
+      });
+
+      let targetId = null;
+      if (grade === 'A+') targetId = '5';
+      else if (grade === 'A') targetId = '4';
+      else if (grade === 'B') targetId = '3';
+      else if (grade === 'C') targetId = '2';
+      else if (grade === 'D') targetId = '1';
+      else if (grade === 'F') targetId = '0';
+
+      if (targetId) {
+        const row = document.getElementById(`scale-row-${targetId}`);
+        if (row) {
+          row.classList.add('scale-active');
+        }
+      }
+    }
+
+    // Manual Override Handler
+    toggleManualOverride.addEventListener('change', (e) => {
+      isManualOverride = e.target.checked;
+      if (isManualOverride) {
+        manualGradePillGroup.classList.remove('opacity-30', 'pointer-events-none');
+        updateManualGradeButtons(manualGrade);
+      } else {
+        manualGradePillGroup.classList.add('opacity-30', 'pointer-events-none');
+      }
+      calculateGrade();
+    });
+
+    function updateManualGradeButtons(grade) {
+      document.querySelectorAll('.grade-pill-btn').forEach(btn => {
+        if (btn.getAttribute('data-grade') === grade) {
+          btn.className = 'grade-pill-btn px-2 py-1 text-xs font-bold rounded border border-black bg-black text-white transition';
+        } else {
+          btn.className = 'grade-pill-btn px-2 py-1 text-xs font-bold rounded border border-gray-300 bg-white text-gray-800 hover:border-black transition';
+        }
+      });
+    }
+
+    document.querySelectorAll('.grade-pill-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        manualGrade = btn.getAttribute('data-grade');
+        updateManualGradeButtons(manualGrade);
+        calculateGrade();
+      });
+    });
+
+    function getSelectedMemberName() {
+      if (selectMemberName.value === '__CUSTOM__') {
+        return inputCustomName.value.trim() || 'TEAM MEMBER';
+      }
+      return selectMemberName.value;
+    }
+
+    // Dropdown change listener
+    selectMemberName.addEventListener('change', () => {
+      if (selectMemberName.value === '__CUSTOM__') {
+        inputCustomName.classList.remove('hidden');
+        inputCustomName.focus();
+        cardDisplayName.textContent = (inputCustomName.value.trim() || 'TEAM MEMBER').toUpperCase();
+      } else {
+        inputCustomName.classList.add('hidden');
+        cardDisplayName.textContent = selectMemberName.value.toUpperCase();
+      }
+    });
+
+    // Custom Name Input Sync
+    inputCustomName.addEventListener('input', () => {
+      cardDisplayName.textContent = (inputCustomName.value.trim() || 'TEAM MEMBER').toUpperCase();
+    });
+
+    // Live Date Sync
+    inputDate.addEventListener('change', (e) => {
+      cardDisplayDate.textContent = formatDate(e.target.value);
+    });
+
+    // Check All / Uncheck All
+    btnSelectAll.addEventListener('click', () => {
+      const allChecked = activities.every(a => a.checked);
+      activities.forEach(a => {
+        a.checked = !allChecked;
+        if (!allChecked && a.userCount === '') {
+          a.userCount = a.defaultCount;
+        }
+      });
+      btnSelectAll.textContent = allChecked ? 'Check All' : 'Uncheck All';
+      render();
+    });
+
+    // Reset All
+    btnResetAll.addEventListener('click', () => {
+      activities.forEach(a => {
+        a.checked = false;
+        a.userCount = '';
+      });
+      toggleManualOverride.checked = false;
+      isManualOverride = false;
+      manualGradePillGroup.classList.add('opacity-30', 'pointer-events-none');
+      selectMemberName.selectedIndex = 0;
+      inputCustomName.value = '';
+      inputCustomName.classList.add('hidden');
+      cardDisplayName.textContent = selectMemberName.value.toUpperCase();
+      initDate();
+      render();
+      showToast('Form reset to default.');
+    });
+
+    // ================= EXPORT ENGINE =================
+    async function exportCardImage() {
+      showToast('Rendering clean accountability card...');
+      const cardEl = document.getElementById('accountability-capture-card');
+      const name = getSelectedMemberName().replace(/[^a-zA-Z0-9_-]/g, '_');
+      const dateText = cardDisplayDate.textContent.replace(/\./g, '-');
+      const filename = `Accountability_${name}_${dateText}.png`;
+
+      // Temporarily ensure transform is 1 for exact 1:1 crisp raster capture
+      const currentTransform = previewScaler.style.transform;
+      previewScaler.style.transform = 'none';
+
+      let dataUrl = null;
+
+      try {
+        if (typeof window.html2canvas === 'function') {
+          const canvas = await html2canvas(cardEl, {
+            scale: 2.5,
+            backgroundColor: '#ffffff',
+            useCORS: true,
+            logging: false,
+            width: 520,
+            height: 670,
+            onclone: (clonedDoc) => {
+              const clonedCard = clonedDoc.getElementById('accountability-capture-card');
+              if (clonedCard) {
+                clonedCard.style.boxShadow = 'none';
+              }
+            }
+          });
+          dataUrl = canvas.toDataURL('image/png');
+        } else {
+          throw new Error('html2canvas unavailable');
+        }
+      } catch (err) {
+        console.warn('Using native canvas drawing fallback:', err);
+        dataUrl = drawFallbackCard();
+      } finally {
+        previewScaler.style.transform = currentTransform;
+      }
+
+      if (!dataUrl) {
+        showToast('Image export failed, please try again.');
+        return;
+      }
+
+      modalImagePreview.src = dataUrl;
+      modalDirectDownloadLink.href = dataUrl;
+      modalDirectDownloadLink.download = filename;
+
+      try {
+        const link = document.createElement('a');
+        link.href = dataUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast('Image downloaded successfully!');
+      } catch (e) {
+        console.log('Direct click handled via modal');
+      }
+
+      previewModal.classList.remove('hidden');
+    }
+
+    // Direct Canvas Draw Fallback
+    function drawFallbackCard() {
+      const canvas = document.getElementById('fallback-canvas');
+      canvas.width = 1040;
+      canvas.height = 1340;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, 1040, 1340);
+
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 6;
+      ctx.strokeRect(40, 40, 960, 1260);
+
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 44px sans-serif';
+      ctx.fillText('PANDA EMPIRE BUILDERS', 70, 110);
+
+      ctx.font = 'bold 20px sans-serif';
+      ctx.fillStyle = '#555555';
+      ctx.fillText('DAILY ACCOUNTABILITY REPORT • EST. 2019', 70, 150);
+
+      ctx.strokeStyle = '#000000';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(740, 65, 230, 85);
+      ctx.fillStyle = '#555555';
+      ctx.font = 'bold 16px sans-serif';
+      ctx.fillText('DATE', 835, 95);
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 26px sans-serif';
+      ctx.fillText(cardDisplayDate.textContent, 785, 130);
+
+      ctx.fillStyle = '#777777';
+      ctx.font = 'bold 16px sans-serif';
+      ctx.fillText('TEAM MEMBER', 70, 215);
+
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 36px sans-serif';
+      ctx.fillText(getSelectedMemberName().toUpperCase(), 70, 260);
+
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(70, 290);
+      ctx.lineTo(970, 290);
+      ctx.stroke();
+
+      let startY = 360;
+      activities.forEach(act => {
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(70, startY - 26, 32, 32);
+
+        if (act.checked) {
+          ctx.fillStyle = '#000000';
+          ctx.fillRect(70, startY - 26, 32, 32);
+          ctx.fillStyle = '#ffffff';
+          ctx.font = 'bold 24px sans-serif';
+          ctx.fillText('✓', 76, startY - 2);
+        }
+
+        ctx.fillStyle = act.checked ? '#000000' : '#777777';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillText(act.label, 120, startY);
+
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 24px monospace';
+        const val = act.userCount || (act.checked ? act.defaultCount : '-');
+        ctx.fillText(val, 900, startY);
+
+        startY += 75;
+      });
+
+      const grade = cardDisplayGradeBox.textContent;
+      ctx.fillStyle = '#000000';
+      ctx.fillRect(800, 1140, 140, 120);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 64px sans-serif';
+      ctx.fillText(grade, 840, 1225);
+
+      ctx.fillStyle = '#000000';
+      ctx.font = 'bold 24px sans-serif';
+      ctx.fillText('OFFICIAL GRADE', 610, 1210);
+
+      return canvas.toDataURL('image/png');
+    }
+
+    // Modal Events
+    btnCloseModal.addEventListener('click', () => previewModal.classList.add('hidden'));
+    previewModal.addEventListener('click', (e) => {
+      if (e.target === previewModal) previewModal.classList.add('hidden');
+    });
+
+    modalCopyImgBtn.addEventListener('click', async () => {
+      try {
+        if (!navigator.clipboard || !window.ClipboardItem) {
+          showToast('Long-press the image to save or copy.');
+          return;
+        }
+        const res = await fetch(modalImagePreview.src);
+        const blob = await res.blob();
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        showToast('Image copied to clipboard!');
+      } catch (e) {
+        showToast('Tap and hold image to save.');
+      }
+    });
+
+    // Deploy Modal Events
+    btnOpenDeployGuide.addEventListener('click', () => deployModal.classList.remove('hidden'));
+    btnCloseDeployModal.addEventListener('click', () => deployModal.classList.add('hidden'));
+    btnDeployOk.addEventListener('click', () => deployModal.classList.add('hidden'));
+    deployModal.addEventListener('click', (e) => {
+      if (e.target === deployModal) deployModal.classList.add('hidden');
+    });
+
+    // Copy Text Summary for Chat
+    btnCopyChatText.addEventListener('click', () => {
+      const name = getSelectedMemberName();
+      const date = cardDisplayDate.textContent;
+      const grade = cardDisplayGradeBox.textContent;
+
+      let msg = `🐼 PANDA EMPIRE BUILDERS\n`;
+      msg += `👤 Member: ${name}\n`;
+      msg += `📅 Date: ${date}\n`;
+      msg += `🏆 GRADE: ${grade}\n\n`;
+      msg += `PRODUCTION:\n`;
+      activities.forEach(act => {
+        const mark = act.checked ? '✅' : '⬜';
+        const num = act.userCount || (act.checked ? act.defaultCount : '0');
+        msg += `${mark} ${act.label}: ${num}\n`;
+      });
+      msg += `\nVision • Integrity • Purpose`;
+
+      const t = document.createElement('textarea');
+      t.value = msg;
+      document.body.appendChild(t);
+      t.select();
+      try {
+        document.execCommand('copy');
+        showToast('Text copied for group chat!');
+      } catch (err) {
+        showToast('Could not auto-copy text.');
+      }
+      document.body.removeChild(t);
+    });
+
+    // Main download triggers
+    btnMainDownload.addEventListener('click', exportCardImage);
+    btnHeaderDownload.addEventListener('click', exportCardImage);
+
+    // Resize listener for mobile scaling
+    window.addEventListener('resize', updatePreviewScale);
+
+    // Initialize App
+    window.onload = function() {
+      initDate();
+      cardDisplayName.textContent = selectMemberName.value.toUpperCase();
+      render();
+    };
+  </script>
+</body>
+</html>
